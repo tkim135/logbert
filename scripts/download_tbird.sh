@@ -1,6 +1,6 @@
 #!/bin/bash
 
-file="${HOME}/.dataset/tbird/"
+file="../.dataset/tbird/"
 if [ -e $file ]
 then
   echo "$file exists"

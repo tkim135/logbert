@@ -37,7 +37,7 @@ options["test_ratio"] = 1
 options["is_logkey"] = True
 options["is_time"] = False
 
-options["hypersphere_loss"] = True
+options["hypersphere_loss"] = False #True
 options["hypersphere_loss_test"] = False
 
 options["scale"] = None # MinMaxScaler()
@@ -62,6 +62,8 @@ options["adam_weight_decay"] = 0.00
 options["with_cuda"]= True
 options["cuda_devices"] = None
 options["log_freq"] = None
+
+options["measure_gpu_performance"] = True
 
 # predict
 options["num_candidates"] = 6

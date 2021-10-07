@@ -12,6 +12,8 @@ from bert_pytorch.dataset import WordVocab
 from bert_pytorch.dataset import LogDataset
 from bert_pytorch.dataset.sample import fixed_window
 
+from gpu_performance.utils import measure_gpu_utilization
+
 
 def compute_anomaly(results, params, seq_threshold=0.5):
     is_logkey = params["is_logkey"]
@@ -79,6 +81,7 @@ class Predictor():
         self.test_ratio = options["test_ratio"]
         self.mask_ratio = options["mask_ratio"]
         self.min_len=options["min_len"]
+        self.measure_gpu_performance = options["measure_gpu_performance"]
 
     def detect_logkey_anomaly(self, masked_output, masked_label):
         num_undetected_tokens = 0
@@ -136,7 +139,14 @@ class Predictor():
         output_results = []
         total_dist = []
         output_cls = []
-        logkey_test, time_test = self.generate_test(output_dir, file_name, self.window_size, self.adaptive_window, self.seq_len, scale, self.min_len)
+        if self.measure_gpu_performance:
+            # combine throughput calculation for normal and abnormal, otherwise you get two numbers
+            logkey_test_normal, time_test_normal = self.generate_test(output_dir, "test_normal", self.window_size, self.adaptive_window, self.seq_len, scale, self.min_len)
+            logkey_test_abnormal, time_test_abnormal = self.generate_test(output_dir, "test_abnormal", self.window_size, self.adaptive_window, self.seq_len, scale, self.min_len)
+            logkey_test = np.concatenate((logkey_test_normal, logkey_test_abnormal), axis=0)
+            time_test = np.concatenate((time_test_normal, time_test_abnormal), axis=0)
+        else:
+            logkey_test, time_test = self.generate_test(output_dir, file_name, self.window_size, self.adaptive_window, self.seq_len, scale, self.min_len)
 
         # use 1/10 test data
         if self.test_ratio != 1:
@@ -154,6 +164,9 @@ class Predictor():
                                  collate_fn=seq_dataset.collate_fn)
 
         for idx, data in enumerate(data_loader):
+            if self.measure_gpu_performance:
+                measure_gpu_utilization(model, (data["bert_input"], data["time_input"]), None, 0, self.batch_size, 100, 1.0)
+                break
             data = {key: value.to(self.device) for key, value in data.items()}
 
             result = model(data["bert_input"], data["time_input"])

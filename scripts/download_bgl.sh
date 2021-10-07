@@ -1,6 +1,6 @@
 #!/bin/bash
 
-file="${HOME}/.dataset/bgl/"
+file="../.dataset/bgl/"
 if [ -e $file ]
 then
   echo "$file exists"
@@ -9,6 +9,6 @@ else
 fi
 
 cd $file
-zipfile=BGL.tar.gz?download=1
-wget https://zenodo.org/record/3227177/files/${zipfile} -P $file
+zipfile=BGL.tar.gz
+wget -O $zipfile https://zenodo.org/record/3227177/files/${zipfile}?download=1 -P $file
 tar -xvzf $zipfile

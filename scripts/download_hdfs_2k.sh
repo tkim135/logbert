@@ -1,6 +1,6 @@
 #!/bin/bash
 
-file="${HOME}/.dataset/hdfs_2k/"
+file="../.dataset/hdfs_2k/"
 if [ -e $file ]
 then
   echo "$file exists"
