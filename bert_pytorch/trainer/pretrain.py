@@ -10,6 +10,8 @@ import tqdm
 import numpy as np
 import pandas as pd
 
+from gpu_performance.gpu_w_cpu_latency import measure_gpu_utilization
+
 class BERTTrainer:
     """
     BERTTrainer make the pretrained BERT model with two LM training method.
@@ -25,7 +27,7 @@ class BERTTrainer:
                  train_dataloader: DataLoader, valid_dataloader: DataLoader = None,
                  lr: float = 1e-4, betas=(0.9, 0.999), weight_decay: float = 0.01, warmup_steps=10000,
                  with_cuda: bool = True, cuda_devices=None, log_freq: int = 10, is_logkey=True, is_time=False,
-                 hypersphere_loss=False):
+                 hypersphere_loss=False, measure_gpu_performance=False):
         """
         :param bert: BERT model which you want to train
         :param vocab_size: total word vocab size
@@ -92,6 +94,9 @@ class BERTTrainer:
         self.is_logkey = is_logkey
         self.is_time = is_time
 
+        self.measure_gpu_performance = measure_gpu_performance
+        self.batch_size = self.train_data.batch_size
+
     def init_optimizer(self):
         # Setting the Adam optimizer with hyper-param
         self.optim = Adam(self.model.parameters(), lr=self.lr, betas=self.betas, weight_decay=self.weight_decay)
@@ -132,6 +137,9 @@ class BERTTrainer:
 
         total_dist = []
         for i, data in data_iter:
+            if self.measure_gpu_performance:
+                measure_gpu_utilization(self.model, (data["bert_input"], data["time_input"]), self.optim, 0, self.batch_size, 1000, 1.0, data["bert_label"], self.is_logkey)
+                exit()
             data = {key: value.to(self.device) for key, value in data.items()}
 
             result = self.model.forward(data["bert_input"], data["time_input"])

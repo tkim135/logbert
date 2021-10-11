@@ -26,7 +26,8 @@ def measure_gpu_utilization(model: torch.nn.Module,
         start = time.time()
         pbar = tqdm(range(n_iterations), total=n_iterations, dynamic_ncols=True)
         for _ in pbar:
-            model(*cuda_inputs)
+            with torch.no_grad():
+                model(*cuda_inputs)
         torch.cuda.synchronize()
         end = time.time()
     else:

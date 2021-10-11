@@ -50,7 +50,7 @@ options["attn_heads"] = 4
 
 options["epochs"] = 200
 options["n_epochs_stop"] = 10
-options["batch_size"] = 32
+options["batch_size"] = 16
 
 options["corpus_lines"] = None
 options["on_memory"] = True
@@ -63,7 +63,7 @@ options["with_cuda"]= True
 options["cuda_devices"] = None
 options["log_freq"] = None
 
-options["measure_gpu_performance"] = True
+options["measure_gpu_performance"] = False
 
 # predict
 options["num_candidates"] = 6
@@ -81,6 +81,8 @@ print("mask ratio", options["mask_ratio"])
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument("-b", "--batch_size", type=int, default=32)
+    parser.add_argument("-p", "--measure_gpu_performance", type=bool, default=False)
     subparsers = parser.add_subparsers()
 
     train_parser = subparsers.add_parser('train')
@@ -99,6 +101,8 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     print("arguments", args)
+    options["batch_size"] = args.batch_size
+    options["measure_gpu_performance"] = args.measure_gpu_performance
 
     if args.mode == 'train':
         Trainer(options).train()

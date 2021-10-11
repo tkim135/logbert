@@ -12,8 +12,7 @@ from bert_pytorch.dataset import WordVocab
 from bert_pytorch.dataset import LogDataset
 from bert_pytorch.dataset.sample import fixed_window
 
-from gpu_performance.utils import measure_gpu_utilization
-
+from gpu_performance.gpu_w_cpu_latency import measure_gpu_utilization
 
 def compute_anomaly(results, params, seq_threshold=0.5):
     is_logkey = params["is_logkey"]
@@ -165,8 +164,8 @@ class Predictor():
 
         for idx, data in enumerate(data_loader):
             if self.measure_gpu_performance:
-                measure_gpu_utilization(model, (data["bert_input"], data["time_input"]), None, 0, self.batch_size, 100, 1.0)
-                break
+                measure_gpu_utilization(model, (data["bert_input"], data["time_input"]), None, 0, self.batch_size, 1000, 1.0)
+                exit()
             data = {key: value.to(self.device) for key, value in data.items()}
 
             result = model(data["bert_input"], data["time_input"])
