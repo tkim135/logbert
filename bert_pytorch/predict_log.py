@@ -1,6 +1,8 @@
 import numpy as np
+import os
 import scipy.stats as stats
 import seaborn as sns
+import sys
 import matplotlib.pyplot as plt
 import pickle
 import time
@@ -13,6 +15,11 @@ from bert_pytorch.dataset import LogDataset
 from bert_pytorch.dataset.sample import fixed_window
 
 from gpu_performance.gpu_w_cpu_latency import measure_gpu_utilization
+from gpu_performance.convert_to_tensorrt import torch2onnx
+from gpu_performance.tensorrt_utils import build_engine_onnx, measure_tensorrt_util
+
+sys.path.insert(1, '/home/ubuntu/TensorRT/samples/python/introductory_parser_samples/..')
+import common
 
 def compute_anomaly(results, params, seq_threshold=0.5):
     is_logkey = params["is_logkey"]
@@ -58,6 +65,7 @@ class Predictor():
         self.corpus_lines = options["corpus_lines"]
         self.on_memory = options["on_memory"]
         self.batch_size = options["batch_size"]
+        self.hidden_size = options["hidden"]
         self.num_workers = options["num_workers"]
         self.num_candidates = options["num_candidates"]
         self.output_dir = options["output_dir"]
@@ -81,6 +89,8 @@ class Predictor():
         self.mask_ratio = options["mask_ratio"]
         self.min_len=options["min_len"]
         self.measure_gpu_performance = options["measure_gpu_performance"]
+        self.convert_to_tensorrt = options["convert_to_tensorrt"]
+        self.measure_tensorrt = options["measure_tensorrt"]
 
     def detect_logkey_anomaly(self, masked_output, masked_label):
         num_undetected_tokens = 0
@@ -138,7 +148,7 @@ class Predictor():
         output_results = []
         total_dist = []
         output_cls = []
-        if self.measure_gpu_performance:
+        if self.measure_gpu_performance or self.convert_to_tensorrt or self.measure_tensorrt:
             # combine throughput calculation for normal and abnormal, otherwise you get two numbers
             logkey_test_normal, time_test_normal = self.generate_test(output_dir, "test_normal", self.window_size, self.adaptive_window, self.seq_len, scale, self.min_len)
             logkey_test_abnormal, time_test_abnormal = self.generate_test(output_dir, "test_abnormal", self.window_size, self.adaptive_window, self.seq_len, scale, self.min_len)
@@ -165,6 +175,21 @@ class Predictor():
         for idx, data in enumerate(data_loader):
             if self.measure_gpu_performance:
                 measure_gpu_utilization(model, (data["bert_input"], data["time_input"]), None, 0, self.batch_size, 1000, 1.0)
+                exit()
+            if self.convert_to_tensorrt:
+                torch2onnx(model, (data["bert_input"], data["time_input"]))
+                exit()
+            if self.measure_tensorrt:
+                model_dir = './onnx'
+                model_path = os.path.join(model_dir, "b%d_model.onnx" % self.batch_size)
+                engine = build_engine_onnx(model_path, self.batch_size, data["bert_input"].shape[1], len(vocab), self.hidden_size)
+                inputs, outputs, bindings, stream = common.allocate_buffers(engine)
+                context = engine.create_execution_context()
+                # tensorRT
+                batch = (data["bert_input"], data["time_input"])
+                for i in range(len(inputs)):
+                    np.copyto(inputs[i].host, batch[i].cpu().numpy().ravel())
+                measure_tensorrt_util(context, bindings, inputs, outputs, stream, batch, self.batch_size, 1000, 1.0)
                 exit()
             data = {key: value.to(self.device) for key, value in data.items()}
 

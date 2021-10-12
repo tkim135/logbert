@@ -2,7 +2,7 @@ import time
 import torch
 from tqdm import tqdm
 
-def measure_gpu_utilization(model: torch.nn.Module,
+def measure_gpu_utilization_without_cpu_latency(model: torch.nn.Module,
                             inputs,
                             optim: torch.optim.SGD,
                             model_flops: int,
