@@ -177,7 +177,7 @@ class Predictor():
                 measure_gpu_utilization(model, (data["bert_input"], data["time_input"]), None, 0, self.batch_size, 1000, 1.0)
                 exit()
             if self.convert_to_tensorrt:
-                torch2onnx(model, (data["bert_input"], data["time_input"]))
+                torch2onnx(model, (data["bert_input"], data["time_input"]), self.batch_size)
                 exit()
             if self.measure_tensorrt:
                 model_dir = './onnx'
