@@ -91,6 +91,7 @@ class Predictor():
         self.measure_gpu_performance = options["measure_gpu_performance"]
         self.convert_to_tensorrt = options["convert_to_tensorrt"]
         self.measure_tensorrt = options["measure_tensorrt"]
+        self.no_head = options["no_head"]
 
     def detect_logkey_anomaly(self, masked_output, masked_label):
         num_undetected_tokens = 0
@@ -174,15 +175,18 @@ class Predictor():
 
         for idx, data in enumerate(data_loader):
             if self.measure_gpu_performance:
-                measure_gpu_utilization(model, (data["bert_input"], data["time_input"]), None, 0, self.batch_size, 1000, 1.0)
+                measure_gpu_utilization(model, (data["bert_input"], data["time_input"]), None, 0, self.batch_size, 1000, 1.0, no_head=self.no_head)
                 exit()
             if self.convert_to_tensorrt:
-                torch2onnx(model, (data["bert_input"], data["time_input"]), self.batch_size)
+                torch2onnx(model, (data["bert_input"], data["time_input"]), self.batch_size, self.no_head)
                 exit()
             if self.measure_tensorrt:
                 model_dir = './onnx'
-                model_path = os.path.join(model_dir, "b%d_model.onnx" % self.batch_size)
-                engine = build_engine_onnx(model_path, self.batch_size, data["bert_input"].shape[1], len(vocab), self.hidden_size)
+                if self.no_head:
+                    model_path = os.path.join(model_dir, "b%d_bert_only_model.onnx" % self.batch_size)
+                else:
+                    model_path = os.path.join(model_dir, "b%d_model.onnx" % self.batch_size)
+                engine = build_engine_onnx(model_path, self.batch_size, data["bert_input"].shape[1], len(vocab), self.hidden_size, self.no_head)
                 inputs, outputs, bindings, stream = common.allocate_buffers(engine)
                 context = engine.create_execution_context()
                 # tensorRT

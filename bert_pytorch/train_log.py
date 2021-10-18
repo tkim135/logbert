@@ -49,6 +49,7 @@ class Trainer():
         self.mask_ratio = options["mask_ratio"]
         self.min_len = options['min_len']
         self.measure_gpu_performance = options["measure_gpu_performance"]
+        self.no_head = options["no_head"]
 
         print("Save options parameters")
         save_parameters(options, self.model_dir + "parameters.txt")
@@ -103,7 +104,7 @@ class Trainer():
                               with_cuda=self.with_cuda, cuda_devices=self.cuda_devices, log_freq=self.log_freq,
                               is_logkey=self.is_logkey, is_time=self.is_time,
                               hypersphere_loss=self.hypersphere_loss,
-                              measure_gpu_performance=self.measure_gpu_performance)
+                              measure_gpu_performance=self.measure_gpu_performance, no_head=self.no_head)
 
         self.start_iteration(surfix_log="log2")
 

@@ -13,12 +13,15 @@ def measure_gpu_utilization(model: torch.nn.Module,
                             n_iterations: int,
                             peak_device_flops: int,
                             labels: Optional[torch.Tensor] = None,
-                            is_logkey: Optional[bool] = True):
+                            is_logkey: Optional[bool] = True,
+                            no_head: Optional[bool] = False):
     """
     Measures the overall utilization of a GPU by comparing the effecitive flops on a given model to it's peak flops.
     """
     
     model.cuda().half()
+    if no_head:
+        model = model.bert
 
     # define loss function after model has been moved to GPU
     criterion = nn.NLLLoss(ignore_index=0)
@@ -61,13 +64,16 @@ def measure_gpu_utilization(model: torch.nn.Module,
                 else:
                     cuda_inputs.append(inp.cuda())
             result = model(*cuda_inputs)
-            # move labels to GPU also
-            if labels.dtype == torch.float32:
-                labels = labels.cuda().half()
+            if no_head:
+                result.backward(torch.ones_like(result))
             else:
-                labels = labels.cuda()
-            loss = torch.tensor(0) if not is_logkey else criterion(result["logkey_output"].transpose(1, 2), labels)
-            loss.backward()
+                # move labels to GPU also
+                if labels.dtype == torch.float32:
+                    labels = labels.cuda().half()
+                else:
+                    labels = labels.cuda()
+                loss = torch.tensor(0) if not is_logkey else criterion(result["logkey_output"].transpose(1, 2), labels)
+                loss.backward()
             optim.step()
         torch.cuda.synchronize()
         end = time.time()

@@ -34,7 +34,7 @@ class BERT(nn.Module):
             [TransformerBlock(hidden, attn_heads, hidden * 2, dropout) for _ in range(n_layers)])
 
 
-    def forward(self, x, segment_info=None, time_info=None):
+    def forward(self, x, time_info=None, segment_info=None):
         # attention masking for padded token
         # torch.ByteTensor([batch_size, 1, seq_len, seq_len)
         mask = (x > 0).unsqueeze(1).repeat(1, x.size(1), 1).unsqueeze(1)

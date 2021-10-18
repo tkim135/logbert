@@ -66,6 +66,7 @@ options["log_freq"] = None
 options["measure_gpu_performance"] = False
 options["convert_to_tensorrt"] = False
 options["measure_tensorrt"] = False
+options["no_head"] = False
 
 # predict
 options["num_candidates"] = 6
@@ -87,6 +88,7 @@ if __name__ == "__main__":
     parser.add_argument("-p", "--measure_gpu_performance", type=bool, default=False)
     parser.add_argument("--convert_to_tensorrt", type=bool, default=False)
     parser.add_argument("--measure_tensorrt", type=bool, default=False)
+    parser.add_argument("--no_head", type=bool, default=False)
     subparsers = parser.add_subparsers()
 
     train_parser = subparsers.add_parser('train')
@@ -109,6 +111,7 @@ if __name__ == "__main__":
     options["measure_gpu_performance"] = args.measure_gpu_performance
     options["convert_to_tensorrt"] = args.convert_to_tensorrt
     options["measure_tensorrt"] = args.measure_tensorrt
+    options["no_head"] = args.no_head
 
     if args.mode == 'train':
         Trainer(options).train()

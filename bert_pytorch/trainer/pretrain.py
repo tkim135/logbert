@@ -27,7 +27,7 @@ class BERTTrainer:
                  train_dataloader: DataLoader, valid_dataloader: DataLoader = None,
                  lr: float = 1e-4, betas=(0.9, 0.999), weight_decay: float = 0.01, warmup_steps=10000,
                  with_cuda: bool = True, cuda_devices=None, log_freq: int = 10, is_logkey=True, is_time=False,
-                 hypersphere_loss=False, measure_gpu_performance=False):
+                 hypersphere_loss=False, measure_gpu_performance=False, no_head=False):
         """
         :param bert: BERT model which you want to train
         :param vocab_size: total word vocab size
@@ -97,6 +97,8 @@ class BERTTrainer:
         self.measure_gpu_performance = measure_gpu_performance
         self.batch_size = self.train_data.batch_size
 
+        self.no_head = no_head
+
     def init_optimizer(self):
         # Setting the Adam optimizer with hyper-param
         self.optim = Adam(self.model.parameters(), lr=self.lr, betas=self.betas, weight_decay=self.weight_decay)
@@ -138,7 +140,7 @@ class BERTTrainer:
         total_dist = []
         for i, data in data_iter:
             if self.measure_gpu_performance:
-                measure_gpu_utilization(self.model, (data["bert_input"], data["time_input"]), self.optim, 0, self.batch_size, 1000, 1.0, data["bert_label"], self.is_logkey)
+                measure_gpu_utilization(self.model, (data["bert_input"], data["time_input"]), self.optim, 0, self.batch_size, 1000, 1.0, data["bert_label"], self.is_logkey, no_head=self.no_head)
                 exit()
             data = {key: value.to(self.device) for key, value in data.items()}
 

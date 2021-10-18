@@ -21,7 +21,7 @@ import common
 TRT_LOGGER = trt.Logger(trt.Logger.WARNING)
 A100_FLOPS = int(19.5 * 10**12) # https://www.nvidia.com/content/dam/en-zz/Solutions/Data-Center/a100/pdf/nvidia-a100-datasheet.pdf
 
-def build_engine_onnx(model_file, batch_size, seq_len, candidate_num, hidden_size):
+def build_engine_onnx(model_file, batch_size, seq_len, candidate_num, hidden_size, no_head):
     builder = trt.Builder(TRT_LOGGER)
     network = builder.create_network(common.EXPLICIT_BATCH)
     config = builder.create_builder_config()
@@ -32,12 +32,16 @@ def build_engine_onnx(model_file, batch_size, seq_len, candidate_num, hidden_siz
     profile = builder.create_optimization_profile()
     bert_input_shape = (batch_size, seq_len)
     time_input_shape = (batch_size, seq_len, 1)
-    logkey_output_shape = (batch_size, seq_len, candidate_num)
-    cls_output_shape = (batch_size, hidden_size)
     profile.set_shape('bert_input', bert_input_shape, bert_input_shape, bert_input_shape)
     profile.set_shape('time_input', time_input_shape, time_input_shape, time_input_shape)
-    profile.set_shape('logkey_output', logkey_output_shape, logkey_output_shape, logkey_output_shape)
-    profile.set_shape('cls_output', cls_output_shape, cls_output_shape, cls_output_shape)
+    if no_head:
+        bert_output_shape = (batch_size, seq_len, hidden_size)
+        profile.set_shape('bert_output', bert_output_shape, bert_output_shape, bert_output_shape)
+    else:
+        logkey_output_shape = (batch_size, seq_len, candidate_num)
+        cls_output_shape = (batch_size, hidden_size)
+        profile.set_shape('logkey_output', logkey_output_shape, logkey_output_shape, logkey_output_shape)
+        profile.set_shape('cls_output', cls_output_shape, cls_output_shape, cls_output_shape)
     config.add_optimization_profile(profile)
 
     # config.max_workspace_size = common.GiB(1)
