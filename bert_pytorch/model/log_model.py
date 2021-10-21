@@ -19,7 +19,7 @@ class BERTLog(nn.Module):
         self.time_lm = TimeLogModel(self.bert.hidden)
         # self.fnn_cls = LinearCLS(self.bert.hidden)
         #self.cls_lm = LogClassifier(self.bert.hidden)
-        self.result = {"logkey_output": None, "time_output": None, "cls_output": None, "cls_fnn_output": None}
+        self.result = {"logkey_output": None, "cls_output": None}
 
     def forward(self, x, time_info):
         x = self.bert(x, time_info=time_info)
@@ -33,7 +33,7 @@ class BERTLog(nn.Module):
 
         # print(self.result["cls_fnn_output"].shape)
 
-        return self.result
+        return self.result["logkey_output"]
 
 class MaskedLogModel(nn.Module):
     """
