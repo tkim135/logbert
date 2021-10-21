@@ -1,6 +1,9 @@
+common
+datasets
 matplotlib
 numpy
 pandas
+pycuda
 regex
 seaborn
 sklearn
